@@ -10,7 +10,8 @@ data.index = pd.to_datetime(data.index)
 # Drop null values
 data.dropna(inplace=True)
 
-result = seasonal_decompose(data["Zone 1 Power Consumption"], model="multiplicative", period=1440)
+result = seasonal_decompose(
+    data["Zone 3  Power Consumption"], model="multiplicative", period=144)
 result.seasonal.plot()
 result.trend.plot()
 fig = result.plot()

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict
 
 # Torch imports
 import torch
@@ -11,7 +12,7 @@ class Mlp(nn.Module):
     It takes in an input dim and a list of hidden dims and generates a neural network.
     """
 
-    def __init__(self, input_dim: int, hidden_dims: list[int]):
+    def __init__(self, input_dim: int, hidden_dims: list[int], act_fn: str):
         """
         Output dim is the last dim in `hidden_dims`.
         """
@@ -25,18 +26,28 @@ class Mlp(nn.Module):
         cur_dim = input_dim
         for i in range(len(hidden_dims) - 1):
             layers.append(nn.Linear(cur_dim, hidden_dims[i]))
-            layers.append(nn.GELU())
+            layers.append(nn.ReLU())
             cur_dim = hidden_dims[i]
         # No activation after last layer
         layers.append(nn.Linear(cur_dim, hidden_dims[-1]))
         self.layers = nn.Sequential(*layers)
 
-    def forward(self, x: Tensor):
+        self.loss_fn = nn.MSELoss()
+
+    def forward(self, x: Tensor, labels: Tensor = None) -> Dict[str, Tensor]:
         """
         Returns an output after passing the input through the model.
         """
         x = self.layers(x)
-        return x
+        if labels is not None:
+            loss = self.loss_fn(x, labels)
+            return {
+                'preds': x,
+                'loss': loss,
+            }
+        return {
+            'preds': x,
+        }
 
 
 def load_model(model: Mlp, path_to_model: Path):

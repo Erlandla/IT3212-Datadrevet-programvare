@@ -18,4 +18,3 @@ def typo_correction(df):
 
 print(df)
 print(typo_correction(df))
-print("hei :)")

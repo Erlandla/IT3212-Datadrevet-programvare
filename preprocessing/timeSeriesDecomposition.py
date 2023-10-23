@@ -31,8 +31,9 @@ def decomposeDateTime(df: pd.DataFrame):
         # print(dateTime_df['day'], dateTime_df['10minuteofday'])
         dateTime_df = dateTime_df.drop('hour', axis=1).drop('minute', axis=1)
         df = df.drop(dateTime, axis=1)
+        dateTime_df = dateTime_df.drop("temperature", axis=1).drop(
+            "humidity", axis=1).drop("wind_speed", axis=1).drop("aggregated_consumption", axis=1).drop("datetime", axis=1)
         df = pd.concat([df, dateTime_df], axis=1)
-        print(df)
         return df
     else:
         print('No dateTime in this dataframe')

@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
+from typo_correction import typo_correction
 from matplotlib import pyplot as plt
+from aggregate_zone_consumption import aggregate_zone_consumptions
 
 
 def get_bands(data):
@@ -12,7 +14,14 @@ def get_bands(data):
 def main():
     data = pd.read_csv("Tetuan City power consumption.csv")
 
-    column = data["Zone 2  Power Consumption"]
+    data = typo_correction(data)
+
+    data = aggregate_zone_consumptions(data)
+
+    column = data.loc[:, ("temperature")]
+
+    print(data.columns)
+
     window_percentage = 3
     k = int(len(column) * (window_percentage/2/100))
     N = len(column)
@@ -23,12 +32,16 @@ def main():
 
     anomalies = (column > upper) | (column < lower)
 
+    column.plot()
+
+    count = 0
     for i in range(len(anomalies)):
         if (anomalies[i] == True):
-            print("ANOMALY on DateTime " + data["DateTime"][i] +
-                  " with value " + str(data["Zone 2  Power Consumption"][i]))
-            print("Removing anomaly...")
             column[i] = None
+            count += 1
+
+    if count == 0:
+        print("No anomalies detected")
 
     column.plot()
 
@@ -38,9 +51,7 @@ def main():
     plt.show()
 
 
-async def outlier_detection(df: pd.DataFrame, column: pd.Series):
-
-    column = df["aggregated_consumption"]
+def outlier_detection(df: pd.DataFrame, column: pd.Series):
 
     window_percentage = 3
     k = int(len(column) * (window_percentage/2/100))
@@ -52,14 +63,21 @@ async def outlier_detection(df: pd.DataFrame, column: pd.Series):
 
     anomalies = (column > upper) | (column < lower)
 
+    count = 0
     for i in range(len(anomalies)):
         if (anomalies[i] == True):
             print("ANOMALY on datetime " + df["datetime"][i] +
                   " with value " + str(column[i]))
             print("Removing anomaly...")
             column[i] = None
+            count += 1
 
-    # column = column.interpolate(method="linear")
+    if count == 0:
+        print("No anomalies detected")
+
+    column = column.interpolate(method="linear")
+
+    return column
 
 
 if __name__ == "__main__":

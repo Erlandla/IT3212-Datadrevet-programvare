@@ -1,36 +1,17 @@
 import pandas as pd
 import threading
 import asyncio
-from sklearn.model_selection import train_test_split
-from typo_correction import typo_correction
+from aggregate_zone_consumption import aggregate_zone_consumptions
 from basic_moving_average import moving_average
-from timeSeriesDecomposition import decomposeDateTime
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, normalize, MinMaxScaler
 from outlier_detection_test import outlier_detection
+from typo_correction import typo_correction
+from timeSeriesDecomposition import decomposeDateTime
+from rfe import rfe
+from pca import pca_components
 
 df = pd.read_csv('Tetuan City power consumption.csv')
-
-
-def aggregate_zone_consumptions(df: pd.DataFrame):
-    """
-    Combines the values of the three zones in the dataset and returns a 
-    dataframe with the zone consumptions replaced with an aggregated consumption.
-    """
-    zone1 = "zone_1_power_consumption"
-    zone2 = "zone_2_power_consumption"
-    zone3 = "zone_3_power_consumption"
-
-    aggregated_consumption = []
-    for i in range(len(df[zone1])):
-        aggregated_consumption.append(
-            df[zone1][i] + df[zone2][i] + df[zone3][i])
-
-    df["aggregated_consumption"] = aggregated_consumption
-
-    df = df.drop(zone1, axis=1)
-    df = df.drop(zone2, axis=1)
-    df = df.drop(zone3, axis=1)
-    return df
-
 
 """
 Preprocessing rekkefølge:
@@ -38,7 +19,6 @@ Preprocessing rekkefølge:
  - fill
  - aggregate zone consumptions to one number
  - outlier-detection, fill if needed
- - moving average
  - standardize
  - pca?
  - Feature selection? (RFE?)
@@ -46,47 +26,64 @@ Preprocessing rekkefølge:
 """
 print('============ Preprocessing - Start ============')
 # Fix column names
+print("==== Typo correction... ====")
 df = typo_correction(df)
+print("Done.", end="\n")
+
+# Dropping diffuse and general diffuse flows
+df = df.drop("diffuse_flows", axis=1)
+df = df.drop("general_diffuse_flows", axis=1)
 
 # Drop null values, fill using a linear method
+print("==== Dropping null-equivalents... ====")
 df.dropna(inplace=True)
 df.interpolate(method="linear")
+print("Done.", end="\n")
 
 # Aggregate the zone consumptions to a single column
+print("==== Aggregating zone consumptions... ====")
 df = aggregate_zone_consumptions(df)
+print("Done.", end="\n")
 
 # Outlier-detection, fill if needed
-# TODO: fix outlier detection
-"""
-async def tasks():
-    for column in df.columns[1:]:
+print("==== Scanning for outliers... ====")
+for column in df.columns:
+    if column != "datetime":
         print(column)
-        #task = asyncio.create_task(outlier_detection(df, df[column]))
-        outlier_detection(df, df[column])
+        df[column] = outlier_detection(df, df[column])
+print("Done.", end="\n")
 
-        #await task
-asyncio.run(tasks())
-"""
-
-# Moving average
-# TODO: moving average
-# moving_average()
-
-# Data extraction
+# Split datetime into two features: day and 10minuteofday
+print("==== Decompose datetime ====")
 df = decomposeDateTime(df)
+print("Done.")
 
 # Split input and output dataframe
-
+print("==== Splitting input/output df... ====")
 output_df = df["aggregated_consumption"]
 input_df = df.drop("aggregated_consumption", axis=1)
-# Standardize
-
-# PCA
-# TODO:
+print("Done.", end="\n")
 
 # Normalize
-# TODO:
-# input_df = (float(input_df)-float(input_df.min()))/(float(input_df.max())-float(input_df.min()))
+print("==== Data normalization... ====")
+print("Before normalize")
+print(input_df)
+columns = input_df.columns
+min_max_scaler = MinMaxScaler(feature_range=(0, 1))
+min_max_scaler.fit(input_df)
+input_df = min_max_scaler.transform(input_df)
+# input_df = normalize(X=input_df, axis=0)
+input_df = pd.DataFrame(input_df, columns=columns)
+print("After normalize")
+print(input_df)
+print("Done.")
+
+# Standardize and PCA
+print("==== PCA ====")
+input_df = pca_components(input_df)
+# input_df = rfe(input_df, output_df)
+print("Done.", end="\n")
+
 
 print('============ Preprocessing - End ============')
 print('--- Input ---')
@@ -94,3 +91,7 @@ print(input_df)
 print(input_df.columns)
 print('--- Output ---')
 print(output_df)
+
+path = "./basic_models/preprocessed_data.csv"
+preprocessed_data = pd.concat(objs=[input_df, output_df], axis=1)
+preprocessed_data.to_csv(path)

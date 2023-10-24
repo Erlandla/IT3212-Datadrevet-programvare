@@ -22,8 +22,8 @@ print('Training Labels Shape:', train_labels.shape)
 print('Testing Features Shape:', test_features.shape)
 print('Testing Labels Shape:', test_labels.shape)
 
-# Instantiate model with 1000 decision trees
-rf = RandomForestRegressor(n_estimators=1000, random_state=42)
+# Instantiate model with 1000 decision trees 
+rf = RandomForestRegressor(random_state=42, n_estimators=100, max_depth=50, min_samples_split=2, min_samples_leaf=1)
 # Train the model on training data
 rf.fit(train_features, train_labels)
 

@@ -62,6 +62,7 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
             # and the shape `labels` is (batch_size)
             # So we use squeeze to turn `preds` into (batch_size)
             preds = outputs['preds'].squeeze()
+            # root mean absolute error
             all_rmae += (abs(preds - labels) / labels).tolist()
     loss = sum(all_losses) / len(all_losses)
     rmae = sum(all_rmae) / len(all_rmae)

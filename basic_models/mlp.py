@@ -12,7 +12,7 @@ class Mlp(nn.Module):
     It takes in an input dim and a list of hidden dims and generates a neural network.
     """
 
-    def __init__(self, input_dim: int, hidden_dims: list[int], act_fn: str):
+    def __init__(self, input_dim: int, hidden_dims: [int], act_fn: str):
         """
         Output dim is the last dim in `hidden_dims`.
         """
@@ -26,7 +26,7 @@ class Mlp(nn.Module):
         cur_dim = input_dim
         for i in range(len(hidden_dims) - 1):
             layers.append(nn.Linear(cur_dim, hidden_dims[i]))
-            layers.append(nn.ReLU())
+            layers.append(nn.Tanh())
             cur_dim = hidden_dims[i]
         # No activation after last layer
         layers.append(nn.Linear(cur_dim, hidden_dims[-1]))

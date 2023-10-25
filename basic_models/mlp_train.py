@@ -12,6 +12,7 @@ import numpy as np
 
 from mlp import Mlp
 from args import parse_args
+import time
 
 
 def dump_json(obj, fname: str):
@@ -27,7 +28,7 @@ class FeatureData():
         dimensions are features and the last dimension is the label.
         '''
         self.features = torch.tensor(arr[:, :-1], dtype=torch.float32)
-        self.labels = torch.tensor(arr[:, -1], dtype=torch.float32) / 100000 # Scaled down
+        self.labels = torch.tensor(arr[:, -1], dtype=torch.float32) / 10000 # Scaled down
 
     def __getitem__(self, index: int) -> Dict[str, Tensor]:
         return {
@@ -94,10 +95,10 @@ def train(
     train_data: FeatureData,
     dev_data: FeatureData,
     device: str,
-    num_epochs: int = 5,
+    num_epochs: int = 10,
     batch_size: int = 64,
     lr: float = 1e-2,
-    lr_gamma: float = 0.9,
+    lr_gamma: float = 0.85,
     log_interval: int = 100,
 ) -> Dict[str, List[float]]:
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -178,6 +179,7 @@ def main():
     hidden_dim += [1]
     model = Mlp(input_dim, hidden_dim, args.act_fn).to(args.device)
 
+    start_train_time = time.time()
     # Train and test
     train_result = train(
         model,
@@ -186,13 +188,16 @@ def main():
         num_epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
+        lr_gamma=args.lr_gamma,
         log_interval=200,
         device=args.device,
     )
+
+    end_train_time = time.time()
     output_dir = Path(
         'result',
         f'd{args.hidden_dim}_L{args.num_layers}_actfn{args.act_fn}',
-        f"bs{args.batch_size}_lr{args.lr}",
+        f"bs{args.batch_size}_lr{args.lr}_lrgamma{args.lr_gamma}",
     )
     output_dir.mkdir(exist_ok=True, parents=True)
     dump_json(train_result, output_dir / 'train_result.json')
@@ -203,6 +208,8 @@ def main():
     print("Test RMAE:", test_result['rmae'])
 
     dump_json(test_result, output_dir / 'test_result.json')
+
+    print("total training time: " + str(end_train_time - start_train_time))
 
 
 if __name__ == "__main__":

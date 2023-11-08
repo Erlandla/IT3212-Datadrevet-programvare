@@ -46,6 +46,7 @@ df = aggregate_zone_consumptions(df)
 print("Done.", end="\n")
 
 # Outlier-detection, fill if needed
+
 print("==== Scanning for outliers... ====")
 for column in df.columns:
     if column != "datetime":
@@ -53,11 +54,14 @@ for column in df.columns:
         df[column] = outlier_detection(df, df[column])
 print("Done.", end="\n")
 
+
 # Split datetime into two features: day and 10minuteofday
 print("==== Decompose datetime ====")
 df = decomposeDateTime(df)
 print("Done.")
 
+df["prev_aggregated_consumption"] = df["aggregated_consumption"].shift(1)
+df.dropna(how='all', axis=0, inplace=True)
 # Split input and output dataframe
 print("==== Splitting input/output df... ====")
 output_df = df["aggregated_consumption"]
@@ -79,10 +83,12 @@ print(input_df)
 print("Done.")
 
 # Standardize and PCA
+'''
 print("==== PCA ====")
 input_df = pca_components(input_df)
 # input_df = rfe(input_df, output_df)
 print("Done.", end="\n")
+'''
 
 
 print('============ Preprocessing - End ============')

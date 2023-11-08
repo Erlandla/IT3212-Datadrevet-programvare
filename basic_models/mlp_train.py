@@ -83,7 +83,7 @@ def load_data(fname: str, test_size: float = 0.1) -> Tuple[FeatureData, FeatureD
     train_cnt = num_examples - test_cnt - dev_cnt
 
     # Shuffle array and split
-    np.random.shuffle(array)
+    # np.random.shuffle(array)
     train_data = array[:train_cnt]
     dev_data = array[train_cnt:train_cnt + dev_cnt]
     test_data = array[train_cnt + dev_cnt:]
@@ -96,12 +96,12 @@ def train(
     dev_data: FeatureData,
     device: str,
     num_epochs: int = 10,
-    batch_size: int = 64,
+    batch_size: int = 4,
     lr: float = 1e-2,
     lr_gamma: float = 0.85,
-    log_interval: int = 100,
+    log_interval: int = 10,
 ) -> Dict[str, List[float]]:
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     optimizer = Adam(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=lr_gamma)
 
@@ -127,8 +127,14 @@ def train(
             optimizer.zero_grad()
 
             # Perform forward pass
+            # print(inputs.shape, targets.shape)
+            # for n, p in model.named_parameters():
+            #     print(n, tuple(p.shape))
+            assert targets.isnan().sum() == 0, 'NaN in targets'
+            assert inputs.isnan().sum() == 0, 'NaN in inputs'
             outputs = model(inputs, labels=targets)
             loss = outputs['loss']
+            assert not loss.isnan(), 'Model diverged with loss = NaN'
 
             # Backward
             loss.backward()
@@ -174,10 +180,11 @@ def main():
     train_data, dev_data, test_data = load_data("./preprocessed_data.csv")
 
     # Model
-    input_dim = 5
+    input_dim = 7
     hidden_dim = [args.hidden_dim] * args.num_layers
     hidden_dim += [1]
     model = Mlp(input_dim, hidden_dim, args.act_fn).to(args.device)
+
 
     start_train_time = time.time()
     # Train and test
@@ -189,7 +196,7 @@ def main():
         batch_size=args.batch_size,
         lr=args.lr,
         lr_gamma=args.lr_gamma,
-        log_interval=200,
+        log_interval=100,
         device=args.device,
     )
 

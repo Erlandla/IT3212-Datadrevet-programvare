@@ -52,6 +52,7 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
 
     all_losses = []
     all_rmae = []
+    all_preds = []
     with torch.no_grad():
         for step, batch in enumerate(loader):
             inputs = batch["input"].to(device)
@@ -65,12 +66,18 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
             preds = outputs['preds'].squeeze()
             # root mean absolute error
             all_rmae += (abs(preds - labels) / labels).tolist()
+            all_preds += outputs['preds']
     loss = sum(all_losses) / len(all_losses)
     rmae = sum(all_rmae) / len(all_rmae)
     return {
         "loss": loss,
         "rmae": rmae,
+        "pred": all_preds,
     }
+
+def predict(model: Mlp, data: [], ):
+    
+    return
 
 
 def load_data(fname: str, test_size: float = 0.1) -> Tuple[FeatureData, FeatureData, FeatureData]:
@@ -217,6 +224,7 @@ def main():
     dump_json(test_result, output_dir / 'test_result.json')
 
     print("total training time: " + str(end_train_time - start_train_time))
+    return model
 
 
 if __name__ == "__main__":

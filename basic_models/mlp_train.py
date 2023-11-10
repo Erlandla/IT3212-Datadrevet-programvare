@@ -96,8 +96,8 @@ def train(
     dev_data: FeatureData,
     device: str,
     num_epochs: int = 10,
-    batch_size: int = 4,
-    lr: float = 1e-2,
+    batch_size: int = 64,
+    lr: float = 3e-2,
     lr_gamma: float = 0.85,
     log_interval: int = 10,
 ) -> Dict[str, List[float]]:

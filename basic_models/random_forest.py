@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestRegressor
 import pandas as pd
 
 # take the result from the preprocessing instead
-df = pd.read_csv('./basic_models/preprocessed_data.csv')
+df = pd.read_csv('./preprocessed_data.csv')
 
 # Labels are the values we want to predict
 labels = np.array(df['aggregated_consumption'])

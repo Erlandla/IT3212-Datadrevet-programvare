@@ -13,7 +13,23 @@ import numpy as np
 from mlp import Mlp
 from args import parse_args
 import time
+import matplotlib.pyplot as plt
 
+def plot_train(losses: [float]):
+
+    x_axis = losses
+
+    plt.plot(x_axis, 'b')
+    plt.title('Training results')
+    plt.xlabel('Epochs')
+    plt.ylabel('RMAE')
+    output_dir = Path(
+        'result',
+        'training',
+    )
+    output_dir.mkdir(exist_ok=True, parents=True)
+    plt.savefig(output_dir / "training.png")
+    return
 
 def dump_json(obj, fname: str):
     with open(fname, 'w', encoding='utf8') as f:
@@ -44,7 +60,7 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
     '''
     Evaluate `model` on `data`, and return the loss and RMAE.
     '''
-    loader = DataLoader(data, batch_size=batch_size, shuffle=False)
+    loader = DataLoader(data, batch_size=batch_size, shuffle=True)
     model.eval()
 
     print("====== Evaluation ======")
@@ -58,7 +74,7 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
             inputs = batch["input"].to(device)
             labels = batch["label"].to(device)
 
-            outputs = model(inputs, labels=labels)
+            outputs = model(inputs, labels=labels.unsqueeze(1))
             all_losses.append(outputs['loss'].item())
             # the shape of `preds` is (batch_size, 1, 1)
             # and the shape `labels` is (batch_size)
@@ -74,6 +90,7 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
         "rmae": rmae,
         "pred": all_preds,
     }
+    
 
 def predict(model: Mlp, data: [], ):
     
@@ -90,7 +107,7 @@ def load_data(fname: str, test_size: float = 0.1) -> Tuple[FeatureData, FeatureD
     train_cnt = num_examples - test_cnt - dev_cnt
 
     # Shuffle array and split
-    # np.random.shuffle(array)
+    np.random.shuffle(array)
     train_data = array[:train_cnt]
     dev_data = array[train_cnt:train_cnt + dev_cnt]
     test_data = array[train_cnt + dev_cnt:]
@@ -108,7 +125,7 @@ def train(
     lr_gamma: float = 0.85,
     log_interval: int = 10,
 ) -> Dict[str, List[float]]:
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     optimizer = Adam(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=lr_gamma)
 
@@ -129,7 +146,7 @@ def train(
             # Get inputs
             inputs = data["input"].to(device)
             targets = data["label"].to(device)
-
+            
             # Zero the gradients
             optimizer.zero_grad()
 
@@ -139,7 +156,9 @@ def train(
             #     print(n, tuple(p.shape))
             assert targets.isnan().sum() == 0, 'NaN in targets'
             assert inputs.isnan().sum() == 0, 'NaN in inputs'
-            outputs = model(inputs, labels=targets)
+            #print(' ------------------------------------------  HERE <-----------------')
+            outputs = model(inputs, labels=targets.unsqueeze(1))
+            #print(' ------------------------------------------  HERE <-----------------')
             loss = outputs['loss']
             assert not loss.isnan(), 'Model diverged with loss = NaN'
 
@@ -160,6 +179,8 @@ def train(
                     rmae=round(avg_rmae, 5),
                 ))
 
+            # print(' ------------------------------------------  END <-----------------')
+            # exit()
         # Step the scheduler
         lr_scheduler.step()
 
@@ -170,6 +191,8 @@ def train(
         dev_rmae.append(result['rmae'])
         train_losses.append(sum(ep_losses) / len(ep_losses))
         train_rmae.append(sum(ep_rmae) / len(ep_rmae))
+
+        plot_train(train_rmae)
 
     # Process is complete.
     print('Training process has finished.')
@@ -214,14 +237,14 @@ def main():
         f"bs{args.batch_size}_lr{args.lr}_lrgamma{args.lr_gamma}",
     )
     output_dir.mkdir(exist_ok=True, parents=True)
-    dump_json(train_result, output_dir / 'train_result.json')
+    #dump_json(train_result, output_dir / 'train_result.json')
 
     test_result = evaluate(
         model, test_data, batch_size=args.batch_size, device=args.device)
     print("Test loss:", test_result['loss'])
     print("Test RMAE:", test_result['rmae'])
 
-    dump_json(test_result, output_dir / 'test_result.json')
+    #dump_json(test_result, output_dir / 'test_result.json')
 
     print("total training time: " + str(end_train_time - start_train_time))
     return model

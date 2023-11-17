@@ -186,6 +186,7 @@ def train(
 
         # Evaluate
         result = evaluate(model, dev_data, batch_size, device=device)
+        print(f'Learning rate: {lr_scheduler.get_lr()}')
         print(f'Average test loss: {result["loss"]:.5f}')
         dev_losses.append(result['loss'])
         dev_rmae.append(result['rmae'])

@@ -7,7 +7,7 @@ def parse_args() -> Namespace:
     p.add_argument('--device', type=str, default='cpu')
 
     p.add_argument('--batch_size', type=int, default=64)
-    p.add_argument('--epochs', type=int, default=256)
+    p.add_argument('--epochs', type=int, default=5)
     p.add_argument('--lr', type=float, default=1e-1)
     p.add_argument('--lr_gamma', type=float, default=0.95)
 

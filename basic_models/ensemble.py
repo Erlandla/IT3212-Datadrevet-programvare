@@ -9,7 +9,7 @@ from sklearn import linear_model
 import math
 from statistics import mean
 
-df = pandas.read_csv("preprocessed_data.csv")
+df = pandas.read_csv("preprocessed_data_test.csv")
 
 split_index = math.floor((df.shape[0] * (4/5)))
 
@@ -24,10 +24,16 @@ dectre_pred = decisionTree.dt.predict(test_data_2)
 mlp_df = df.iloc[:1,:]
 print(mlp_df.values)
 mlp_model = mlp_train.main()
+mlp_train_data, mlp_dev_data, mlp_test_data = mlp_train.load_data("preprocessed_data_test.csv", 1)
+print(mlp_test_data)
 
-mlp_input = mlp_train.FeatureData(mlp_df.values)
-mlp_results = mlp_train.evaluate(mlp_model, mlp_input, 1, 'cpu')
-print(mlp_results)
+#mlp_input = mlp_train.FeatureData(mlp_test_data)
+mlp_results = mlp_train.evaluate(mlp_model, mlp_test_data, 64, 'cpu')
+#print(mlp_results)
+
+for i, result in enumerate(mlp_results):
+    print(mlp_results['pred'][i].item() * 10000)
+
 neunet_pred = mlp_results['pred'][0].item() * 10000
 
 

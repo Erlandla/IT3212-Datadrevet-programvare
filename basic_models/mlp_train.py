@@ -74,12 +74,12 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
             inputs = batch["input"].to(device)
             labels = batch["label"].to(device)
 
-            outputs = model(inputs, labels=labels.unsqueeze(1))
+            outputs = model(inputs, labels=labels) #outputs = model(inputs, labels=labels.unsqueeze(1))
             all_losses.append(outputs['loss'].item())
             # the shape of `preds` is (batch_size, 1, 1)
             # and the shape `labels` is (batch_size)
             # So we use squeeze to turn `preds` into (batch_size)
-            preds = outputs['preds'].squeeze()
+            preds = outputs['preds'].squeeze() #preds = outputs['preds'].squeeze()
             # root mean absolute error
             all_rmae += (abs(preds - labels) / labels).tolist()
             all_preds += outputs['preds']

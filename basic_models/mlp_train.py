@@ -63,8 +63,8 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
     loader = DataLoader(data, batch_size=batch_size, shuffle=True)
     model.eval()
 
-    print("====== Evaluation ======")
-    print(f"Number of samples: {len(data)}")
+    # print("====== Evaluation ======")
+    # print(f"Number of samples: {len(data)}")
 
     all_losses = []
     all_rmae = []
@@ -74,7 +74,7 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
             inputs = batch["input"].to(device)
             labels = batch["label"].to(device)
 
-            outputs = model(inputs, labels=labels) #outputs = model(inputs, labels=labels.unsqueeze(1))
+            outputs = model(inputs, labels=labels.unsqueeze(1)) #outputs = model(inputs, labels=labels.unsqueeze(1))
             all_losses.append(outputs['loss'].item())
             # the shape of `preds` is (batch_size, 1, 1)
             # and the shape `labels` is (batch_size)

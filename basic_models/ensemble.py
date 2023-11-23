@@ -10,6 +10,23 @@ import math
 from statistics import mean
 import matplotlib.pyplot as plt
 
+
+def load_data(fname, test_size: float = 1):
+    # Prepare dataset
+    raw_data = fname
+    array = raw_data.values
+    num_examples = len(array)
+    test_cnt = int(num_examples * test_size)
+    dev_cnt = test_cnt
+    train_cnt = num_examples - test_cnt - dev_cnt
+
+    # Shuffle array and split
+    #np.random.shuffle(array)
+    train_data = array[:train_cnt]
+    dev_data = array[train_cnt:train_cnt + dev_cnt]
+    test_data = array[train_cnt + dev_cnt:]
+    return mlp_train.FeatureData(test_data)
+
 df = pandas.read_csv("preprocessed_data_test.csv")
 
 mlp_model = mlp_train.main()
@@ -26,13 +43,17 @@ for index, row in df.iterrows():
     test_row_2 = test_row[1:]
     linreg_pred = linear_regression.regr.predict([test_row_2.tolist()])
     test_row_3_temp = df.iloc[[index]]
-    # print(test_row_3_temp.values)
+    print(test_row_3_temp.values)
+    print(test_row_3_temp)
 
     # mlp_df = df.iloc[:1,:]
     # print(mlp_df.values)
+    
+    test_row_3 = load_data(test_row_3_temp)
+    print(test_row_3)
 
-    test_row_3 = mlp_train.FeatureData(test_row_3_temp.values)
-    mlp_results = mlp_train.evaluate(mlp_model, test_row_3, 1, 'cpu')
+    #test_row_3 = mlp_train.FeatureData(test_row_3_temp)
+    mlp_results = mlp_train.evaluate(mlp_model, test_row_3, 64, 'cpu')
     neunet_pred = mlp_results['pred'][0].item() * 10000
 
     #average = statistics.mean([linreg_pred[0], dectre_pred[0], neunet_pred])
@@ -59,7 +80,6 @@ plt.plot([0, max(labels)], [0, max(predictions)], color='red', linestyle='--')
 plt.xlabel('Labels')
 plt.ylabel('Predictions')
 plt.title('Neural Network')
-
 
 
 # Display the plot
@@ -97,3 +117,4 @@ plt.show()
 # average = statistics.mean([linreg_pred[0], dectre_pred[0], neunet_pred])
 # print('')
 # print(f'Mean: {average}')
+

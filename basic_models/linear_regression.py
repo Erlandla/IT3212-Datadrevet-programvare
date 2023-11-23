@@ -26,6 +26,8 @@ regr = linear_model.LinearRegression()
 #regr.fit(X.values, y.values)
 regr.fit(train_features, train_labels)
 
+print('Weights of the model:', regr.coef_)
+
 diff = []
 
 for index, row in df_test.iterrows():

@@ -48,7 +48,7 @@ class FeatureData():
 
     def __getitem__(self, index: int) -> Dict[str, Tensor]:
         return {
-            "input": self.features[index],
+            "input": self.features[index][1:],  # Remove index
             "label": self.labels[index],
         }
 
@@ -74,15 +74,16 @@ def evaluate(model: Mlp, data: FeatureData, batch_size: int, device: str) -> dic
             inputs = batch["input"].to(device)
             labels = batch["label"].to(device)
 
-            outputs = model(inputs, labels=labels.unsqueeze(1)) #outputs = model(inputs, labels=labels.unsqueeze(1))
+            outputs = model(inputs, labels=labels) #outputs = model(inputs, labels=labels.unsqueeze(1))
             all_losses.append(outputs['loss'].item())
             # the shape of `preds` is (batch_size, 1, 1)
             # and the shape `labels` is (batch_size)
             # So we use squeeze to turn `preds` into (batch_size)
-            preds = outputs['preds'].squeeze() #preds = outputs['preds'].squeeze()
+            preds = outputs['preds'] #preds = outputs['preds'].squeeze()
+
             # root mean absolute error
             all_rmae += (abs(preds - labels) / labels).tolist()
-            all_preds += outputs['preds']
+            all_preds += outputs['preds'].tolist()
     loss = sum(all_losses) / len(all_losses)
     rmae = sum(all_rmae) / len(all_rmae)
     return {
@@ -157,7 +158,7 @@ def train(
             assert targets.isnan().sum() == 0, 'NaN in targets'
             assert inputs.isnan().sum() == 0, 'NaN in inputs'
             #print(' ------------------------------------------  HERE <-----------------')
-            outputs = model(inputs, labels=targets.unsqueeze(1))
+            outputs = model(inputs, labels=targets)
             #print(' ------------------------------------------  HERE <-----------------')
             loss = outputs['loss']
             assert not loss.isnan(), 'Model diverged with loss = NaN'
@@ -168,7 +169,7 @@ def train(
 
             # Log statistics
             ep_losses.append(loss.item())
-            batch_rmae = (abs(outputs['preds'].squeeze() - targets) / targets).tolist()
+            batch_rmae = (abs(outputs['preds'] - targets) / targets).tolist()
             ep_rmae += batch_rmae
             if (i + i) % log_interval == 0:
                 avg_loss = sum(ep_losses) / len(ep_losses)
@@ -211,7 +212,7 @@ def main():
     train_data, dev_data, test_data = load_data("./preprocessed_data.csv")
 
     # Model
-    input_dim = 7
+    input_dim = 6
     hidden_dim = [args.hidden_dim] * args.num_layers
     hidden_dim += [1]
     model = Mlp(input_dim, hidden_dim, args.act_fn).to(args.device)
@@ -238,14 +239,15 @@ def main():
         f"bs{args.batch_size}_lr{args.lr}_lrgamma{args.lr_gamma}",
     )
     output_dir.mkdir(exist_ok=True, parents=True)
-    #dump_json(train_result, output_dir / 'train_result.json')
+    dump_json(train_result, output_dir / 'train_result.json')
 
     test_result = evaluate(
         model, test_data, batch_size=args.batch_size, device=args.device)
     print("Test loss:", test_result['loss'])
     print("Test RMAE:", test_result['rmae'])
 
-    #dump_json(test_result, output_dir / 'test_result.json')
+    print("Dumping test result to:", output_dir)
+    dump_json(test_result, output_dir / 'test_result.json')
 
     print("total training time: " + str(end_train_time - start_train_time))
     return model

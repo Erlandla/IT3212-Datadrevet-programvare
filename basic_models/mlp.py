@@ -26,7 +26,7 @@ class Mlp(nn.Module):
         cur_dim = input_dim
         for i in range(len(hidden_dims) - 1):
             layers.append(nn.Linear(cur_dim, hidden_dims[i]))
-            layers.append(nn.Tanh())
+            layers.append(nn.GELU())
             cur_dim = hidden_dims[i]
         # No activation after last layer
         layers.append(nn.Linear(cur_dim, hidden_dims[-1]))
@@ -38,7 +38,10 @@ class Mlp(nn.Module):
         """
         Returns an output after passing the input through the model.
         """
-        x = self.layers(x)
+        # print(x, x.shape)
+        x = self.layers(x)  # (batch_size, input_dim) -> (batch_size, 1)
+        x = x.squeeze()  # (batch_size, 1) -> (batch_size,)
+        # print(x, x.shape)
         if labels is not None:
             loss = self.loss_fn(x, labels)
             return {
